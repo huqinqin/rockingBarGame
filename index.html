@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style>
+        h1{
+            position: fixed;
+            left:750px;
+            top:20px
+        }
+    </style>
+</head>
+<body>
+<canvas id="cvs" width="900" height="900" style="border:1px solid black ;"></canvas>
+<h1>score:<span>0</span></h1>
+<script>
+    var cvs = document.getElementById('cvs');
+    var ctx = cvs.getContext('2d');
+    var gGame = null;
+    var scoreTag = document.getElementsByTagName('h1')[0];
+    var scoreNum = scoreTag.getElementsByTagName('span')[0];
+    function Game() {
+       var _this = this;
+       this.angle = 0;
+       this.speed = 3;
+       this.frame = 0;
+       this.lastFrame = 0;
+       this.x = Math.random() * (cvs.width - 50) + 50;
+       this.y = Math.random() * (cvs.width - 50) + 50;
+       this.emegy = [];
+       this.score = 0;
+       this.draw = function () {
+           ctx.save();
+           ctx.clearRect(0,0,900,900);
+           ctx.beginPath();
+           ctx.arc(450,700,50,0,Math.PI / 180 * 360);
+           ctx.stroke();
+           ctx.beginPath();
+           ctx.translate(450,700);
+           ctx.rotate(_this.angle);
+           ctx.lineWidth = 4;
+           ctx.strokeStyle = 'red';
+           ctx.moveTo(0,0);
+           ctx.lineTo(100,0); //这个地方很重要，初始位置是x的正方向，也就是0度，如果lineTo的参数不一样，即不是0度，就会影响下面的角度
+           ctx.stroke();
+           ctx.restore();
+           ctx.beginPath();
+           ctx.arc(_this.x,_this.y,25,0,Math.PI/180 * 360);
+           ctx.fillStyle = 'green';
+           ctx.fill();
+           if(_this.emegy.length <=6){
+               _this.emegy.push(new Emegy());
+           }
+           _this.emegy.forEach(function (val) {
+               val.update()
+           });
+           _this.isCollision();
+       };
+       this.onmousedown = function (ev) {
+           ev = event || window.event;
+          var x = ev.pageX - cvs.offsetLeft;
+          var y = ev.pageY - cvs.offsetTop;
+           _this.angle = Math.atan2(y - 700,x - 450);
+           //_this.draw();
+           cvs.onmousemove = _this.onmousemove;
+           cvs.onmouseup = _this.onmouseup;
+       };
+       this.onmousemove = function (ev) {
+           ev = event || window.event;
+           var x = ev.pageX - cvs.offsetLeft;
+           var y = ev.pageY - cvs.offsetTop;
+           _this.angle = Math.atan2(y - 700,x - 450);
+           //_this.draw()
+       };
+       this.onmouseup = function () {
+           cvs.onmousedown = null;
+           cvs.onmousemove = null;
+       };
+       this.update = function () {
+           ++_this.frame;
+           var dt = _this.frame - _this.lastFrame;
+           var realityDistance = _this.speed * dt;
+           _this.x += realityDistance * Math.cos(_this.angle);
+           _this.y += realityDistance * Math.sin(_this.angle);
+           _this.lastFrame = _this.frame;
+           _this.draw();
+           window.requestAnimationFrame(_this.update);
+       };
+       document.onmousedown = _this.onmousedown;
+       this.isCollision = function () {
+           _this.emegy.forEach(function (val) {
+               var dy = Math.abs(_this.x - val.x);
+               var dx = Math.abs(_this.y - val.y);
+               var distance = Math.sqrt(dy * dy + dx * dx);
+               if(distance <= 25 + 20){//如果两个坐标抽的绝对值小于两个球的半径，表示已经相撞
+                   val.dead = true;
+               };
+           });
+       }
+    }
+    function Emegy() {
+        var _this = this;
+        this.dead = false;
+        this.x = Math.random() * (cvs.width - 50) + 50;
+        this.y = Math.random() * 200;
+        this.draw = function () {
+            ctx.beginPath();
+            ctx.arc(_this.x,_this.y,20,0,Math.PI/180 * 360);
+            ctx.stroke();
+        }
+        this.update = function () {
+            if(!_this.dead) {
+                //_this.x++;
+                _this.y++;
+                _this.draw();
+            }
+            //var timer = setTimeout(_this.update,2000)
+            //window.requestAnimationFrame(_this.update);
+        }
+    }
+    gGame = new Game();
+    gGame.update();
+</script>
+</body>
+</html>
